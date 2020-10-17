@@ -43,6 +43,7 @@ async def on_ready():
                 send_message += "一時間あたり" + str(left_all / left_hour) + "凸必要です"
 
                 await announce.send(send_message)
+                break
 
     await client.close()
 
