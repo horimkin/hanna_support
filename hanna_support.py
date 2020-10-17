@@ -37,7 +37,7 @@ async def on_ready():
                     "# 残り1凸"):condition.find("# 残り0凸")].count("\n") - 2
                 send_message += "1凸：" + str(left1) + "人\n"
 
-                left_all = left3 + left2 + left1
+                left_all = left3 * 3 + left2 * 2 + left1
                 send_message += "あと" + \
                     str(left_hour) + "時間で" + str(left_all) + "凸\n"
                 send_message += "一時間あたり" + str(left_all / left_hour) + "凸必要です"
