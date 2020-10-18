@@ -18,7 +18,7 @@ async def on_ready():
     time_limmit = 5
     left_hour = 23 - now.hour + time_limmit
 
-    send_message = str(now) + "の凸状況\n"
+    send_message = now.strftime('%Y-%m-%d %H:%M:%S') + "の凸状況\n"
     messages = await remain.history(limit=100).flatten()
     for message in messages:
         if message.author.name == "ハンナ":
