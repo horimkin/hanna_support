@@ -40,7 +40,8 @@ async def on_ready():
                 left_all = left3 * 3 + left2 * 2 + left1
                 send_message += "あと" + \
                     str(left_hour) + "時間で" + str(left_all) + "凸\n"
-                send_message += "一時間あたり" + str(left_all / left_hour) + "凸必要です"
+                send_message += "一時間あたり" + \
+                    str(round(left_all / left_hour, 2)) + "凸必要です"
 
                 await announce.send(send_message)
                 break
