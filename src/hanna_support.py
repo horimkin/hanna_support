@@ -1,7 +1,18 @@
+import sys
 import os
 from datetime import datetime
-import pytz
+from dateutil.tz import gettz
 import discord
+
+date_start = datetime.strptime(
+    os.environ["DATE_START"] + " 06+0900", "%Y-%m-%d %H%z")  # 初日5時は不要
+date_end = datetime.strptime(
+    os.environ["DATE_END"] + " 23:59:59+0900", "%Y-%m-%d %H:%M:%S%z")
+now = datetime.now(gettz("Asia/Tokyo"))
+
+if now <= date_start or date_end < now:
+    print("Outside the clan battle period")
+    sys.exit()
 
 client = discord.Client()
 
@@ -10,18 +21,17 @@ client = discord.Client()
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
     guild = discord.utils.get(client.guilds, name="検証用")
-
     remain = discord.utils.get(guild.channels, name="残凸把握板")
     announce = discord.utils.get(guild.channels, name="残凸時報")
 
-    now = datetime.now(pytz.timezone('Asia/Tokyo'))
-    time_limmit = 5
-    if 0 <= now.hour < 5:
+    if now.day == date_end.day and 5 <= now.hour:
+        left_hour = 24 - now.hour
+    elif 0 <= now.hour < 5:
         left_hour = 5 - now.hour
     else:
-        left_hour = 24 - now.hour + time_limmit
+        left_hour = 24 + 5 - now.hour
 
-    send_message = now.strftime('%Y-%m-%d %H:%M:%S') + "の凸状況\n"
+    send_message = now.strftime('%Y-%m-%d %H時') + "の凸状況\n"
     messages = await remain.history(limit=100).flatten()
     for message in messages:
         if message.author.name == "ハンナ":

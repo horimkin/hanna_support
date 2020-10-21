@@ -1,2 +1,2 @@
-pytz
+python-dateutil
 discord.py
