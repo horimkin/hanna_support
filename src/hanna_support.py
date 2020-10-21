@@ -16,7 +16,10 @@ async def on_ready():
 
     now = datetime.now(pytz.timezone('Asia/Tokyo'))
     time_limmit = 5
-    left_hour = 23 - now.hour + time_limmit
+    if 0 <= now.hour < 5:
+        left_hour = 5 - now.hour
+    else:
+        left_hour = 24 - now.hour + time_limmit
 
     send_message = now.strftime('%Y-%m-%d %H:%M:%S') + "の凸状況\n"
     messages = await remain.history(limit=100).flatten()
