@@ -1,20 +1,34 @@
 import sys
 import os
+import click
 from datetime import datetime
 from dateutil.tz import gettz
 import discord
 
-date_start = datetime.strptime(
-    os.environ["DATE_START"] + " 06+0900", "%Y-%m-%d %H%z")  # 初日5時は不要
-date_end = datetime.strptime(
-    os.environ["DATE_END"] + " 23:59:59+0900", "%Y-%m-%d %H:%M:%S%z")
+client = discord.Client()
 now = datetime.now(gettz("Asia/Tokyo"))
 
-if now <= date_start or date_end < now:
-    print("Outside the clan battle period")
-    sys.exit()
 
-client = discord.Client()
+@click.command()
+@click.option('--out', '-o', is_flag=True)
+def main(out):
+    if out:
+        print("out")
+        pass
+    else:
+        global date_start
+        date_start = datetime.strptime(
+            os.environ["DATE_START"] + " 06+0900", "%Y-%m-%d %H%z")  # 初日5時は不要
+        global date_end
+        date_end = datetime.strptime(
+            os.environ["DATE_END"] + " 23:59:59+0900", "%Y-%m-%d %H:%M:%S%z")
+
+        if now <= date_start or date_end < now:
+            print("Outside the clan battle period")
+            sys.exit()
+
+        token = os.environ["DISCORD_TOKEN"]
+        client.run(token)
 
 
 @client.event
@@ -61,5 +75,6 @@ async def on_ready():
 
     await client.close()
 
-token = os.environ["DISCORD_TOKEN"]
-client.run(token)
+if __name__ == '__main__':
+    # pylint: disable=no-value-for-parameter
+    main()
