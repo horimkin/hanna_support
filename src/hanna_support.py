@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 import json
 import click
 from datetime import datetime
@@ -53,7 +54,7 @@ def main(out, purge):
 
         if now <= date_start or date_end < now:
             print("Outside the clan battle period")
-            sys.exit()
+            return
 
         # pylint: disable=unused-variable
         @client.event
@@ -61,10 +62,23 @@ def main(out, purge):
             print('We have logged in as {0.user}'.format(client))
             guild = discord.utils.get(
                 client.guilds, id=int(os.environ["GUILD_ID"]))
+            reserve = discord.utils.get(
+                guild.channels, id=int(os.environ["RESERVE_CH_ID"]))
             remain = discord.utils.get(
                 guild.channels, id=int(os.environ["REMAIN_CH_ID"]))
             announce = discord.utils.get(
                 guild.channels, id=int(os.environ["ANNOUNCE_CH_ID"]))
+
+            message = (await reserve.history(limit=1, oldest_first=True).flatten())[0]
+            text = re.sub(
+                r"^残HP.*\n", "", message.content.replace("**", ""), flags=re.MULTILINE)
+            group = re.findall(
+                r".\ufe0f\u20e3 (.*)\n.*: (.*)万", text, flags=re.MULTILINE)
+            for i in range(5):
+                if group[i][1] != "0":
+                    await announce.send("@everyone " + group[i][0] + "が" + group[i][1] + "万足りていません")
+                    break
+
             if now.day == date_end.day and 5 <= now.hour:
                 left_hour = 24 - now.hour
             elif 0 <= now.hour < 5:
@@ -94,6 +108,7 @@ def main(out, purge):
                             str(round(left_all / left_hour, 2)) + "凸必要です"
                         await announce.send(send_message)
                         break
+
             await client.close()
 
     token = os.environ["DISCORD_TOKEN"]
