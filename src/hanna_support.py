@@ -47,10 +47,10 @@ def main(out, purge):
     else:
         global date_start
         date_start = datetime.strptime(
-            os.environ["DATE_START"] + " 06+0900", "%Y-%m-%d %H%z")  # 初日5時は不要
+            os.environ["DATE_START"] + " 06+0900", "%Y/%m/%d %H%z")  # 初日5時は不要
         global date_end
         date_end = datetime.strptime(
-            os.environ["DATE_END"] + " 23:59:59+0900", "%Y-%m-%d %H:%M:%S%z")
+            os.environ["DATE_END"] + " 23:59:59+0900", "%Y/%m/%d %H:%M:%S%z")
 
         if now <= date_start or date_end < now:
             print("Outside the clan battle period")
@@ -85,7 +85,7 @@ def main(out, purge):
                 left_hour = 5 - now.hour
             else:
                 left_hour = 24 + 5 - now.hour
-            send_message = now.strftime('%Y-%m-%d %H時') + "の凸状況\n"
+            send_message = now.strftime('%Y/%m/%d %H時') + "の凸状況\n"
             messages = await remain.history(limit=100).flatten()
             for message in messages:
                 if message.author.name == "ハンナ":
