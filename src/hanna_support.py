@@ -1,5 +1,6 @@
 import sys
 import os
+import json
 import click
 from datetime import datetime
 from dateutil.tz import gettz
@@ -11,10 +12,37 @@ now = datetime.now(gettz("Asia/Tokyo"))
 
 @click.command()
 @click.option('--out', '-o', is_flag=True)
-def main(out):
+@click.option('--purge', '-p', is_flag=True)
+def main(out, purge):
     if out:
-        print("out")
-        pass
+        # pylint: disable=unused-variable
+        @client.event
+        async def on_ready():
+            print('We have logged in as {0.user}'.format(client))
+            guilds_info = {}
+            for i, guild in enumerate(client.guilds):
+                channels_info = {}
+                for j, channel in enumerate(guild.text_channels):
+                    channels_info["channel" + str(j)] = {
+                        "name": channel.name, "id": channel.id, "category": channel.category.name}
+                guilds_info["guild" + str(i)] = {"name": guild.name,
+                                                 "id": guild.id, "channels": channels_info}
+            await client.close()
+
+            with open("./data/guilds.json", mode="w") as f:
+                f.write(json.dumps(guilds_info, ensure_ascii=False, indent=4))
+    elif purge:
+        # pylint: disable=unused-variable
+        @client.event
+        async def on_ready():
+            print('We have logged in as {0.user}'.format(client))
+            guild = discord.utils.get(
+                client.guilds, id=int(os.environ["GUILD_ID"]))
+            announce = discord.utils.get(
+                guild.channels, id=int(os.environ["ANNOUNCE_CH_ID"]))
+            deleted = await announce.purge(limit=None)
+            print("Deleted {} message(s)".format(len(deleted)))
+            await client.close()
     else:
         global date_start
         date_start = datetime.strptime(
@@ -27,53 +55,50 @@ def main(out):
             print("Outside the clan battle period")
             sys.exit()
 
-        token = os.environ["DISCORD_TOKEN"]
-        client.run(token)
+        # pylint: disable=unused-variable
+        @client.event
+        async def on_ready():
+            print('We have logged in as {0.user}'.format(client))
+            guild = discord.utils.get(
+                client.guilds, id=int(os.environ["GUILD_ID"]))
+            remain = discord.utils.get(
+                guild.channels, id=int(os.environ["REMAIN_CH_ID"]))
+            announce = discord.utils.get(
+                guild.channels, id=int(os.environ["ANNOUNCE_CH_ID"]))
+            if now.day == date_end.day and 5 <= now.hour:
+                left_hour = 24 - now.hour
+            elif 0 <= now.hour < 5:
+                left_hour = 5 - now.hour
+            else:
+                left_hour = 24 + 5 - now.hour
+            send_message = now.strftime('%Y-%m-%d %H時') + "の凸状況\n"
+            messages = await remain.history(limit=100).flatten()
+            for message in messages:
+                if message.author.name == "ハンナ":
+                    condition = message.content
+                    if condition.startswith("```md"):
+                        # "残り〜凸"と空行を引く
+                        left3 = condition[condition.find(
+                            "# 残り3凸"):condition.find("# 残り2凸")].count("\n") - 2
+                        send_message += "3凸：" + str(left3) + "人\n"
+                        left2 = condition[condition.find(
+                            "# 残り2凸"):condition.find("# 残り1凸")].count("\n") - 2
+                        send_message += "2凸：" + str(left2) + "人\n"
+                        left1 = condition[condition.find(
+                            "# 残り1凸"):condition.find("# 残り0凸")].count("\n") - 2
+                        send_message += "1凸：" + str(left1) + "人\n"
+                        left_all = left3 * 3 + left2 * 2 + left1
+                        send_message += "あと" + \
+                            str(left_hour) + "時間で" + str(left_all) + "凸\n"
+                        send_message += "一時間あたり" + \
+                            str(round(left_all / left_hour, 2)) + "凸必要です"
+                        await announce.send(send_message)
+                        break
+            await client.close()
 
+    token = os.environ["DISCORD_TOKEN"]
+    client.run(token)
 
-@client.event
-async def on_ready():
-    print('We have logged in as {0.user}'.format(client))
-    guild = discord.utils.get(client.guilds, name="検証用")
-    remain = discord.utils.get(guild.channels, name="残凸把握板")
-    announce = discord.utils.get(guild.channels, name="残凸時報")
-
-    if now.day == date_end.day and 5 <= now.hour:
-        left_hour = 24 - now.hour
-    elif 0 <= now.hour < 5:
-        left_hour = 5 - now.hour
-    else:
-        left_hour = 24 + 5 - now.hour
-
-    send_message = now.strftime('%Y-%m-%d %H時') + "の凸状況\n"
-    messages = await remain.history(limit=100).flatten()
-    for message in messages:
-        if message.author.name == "ハンナ":
-            condition = message.content
-            if condition.startswith("```md"):
-                # "残り〜凸"と空行を引く
-                left3 = condition[condition.find(
-                    "# 残り3凸"):condition.find("# 残り2凸")].count("\n") - 2
-                send_message += "3凸：" + str(left3) + "人\n"
-
-                left2 = condition[condition.find(
-                    "# 残り2凸"):condition.find("# 残り1凸")].count("\n") - 2
-                send_message += "2凸：" + str(left2) + "人\n"
-
-                left1 = condition[condition.find(
-                    "# 残り1凸"):condition.find("# 残り0凸")].count("\n") - 2
-                send_message += "1凸：" + str(left1) + "人\n"
-
-                left_all = left3 * 3 + left2 * 2 + left1
-                send_message += "あと" + \
-                    str(left_hour) + "時間で" + str(left_all) + "凸\n"
-                send_message += "一時間あたり" + \
-                    str(round(left_all / left_hour, 2)) + "凸必要です"
-
-                await announce.send(send_message)
-                break
-
-    await client.close()
 
 if __name__ == '__main__':
     # pylint: disable=no-value-for-parameter

@@ -6,4 +6,5 @@ services:
     build: 
       context: ./
     volumes: 
-      - ./src:/src
+      - ./src:/app/src
+      - ./data:/app/data
