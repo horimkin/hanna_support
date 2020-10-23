@@ -10,6 +10,8 @@
 
 [heroku CLI のインストール](https://devcenter.heroku.com/articles/heroku-cli)
 
+[botアカウントの作成と招待](https://discordpy.readthedocs.io/ja/latest/discord.html)
+
 ## ダウンロード
 
 ```sh
