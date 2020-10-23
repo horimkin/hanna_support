@@ -41,7 +41,11 @@ def main(out, purge):
                 client.guilds, id=int(os.environ["GUILD_ID"]))
             announce = discord.utils.get(
                 guild.channels, id=int(os.environ["ANNOUNCE_CH_ID"]))
-            deleted = await announce.purge(limit=None)
+
+            def is_me(m):
+                return m.author == client.user
+
+            deleted = await announce.purge(limit=None, check=is_me)
             print("Deleted {} message(s)".format(len(deleted)))
             await client.close()
     else:
