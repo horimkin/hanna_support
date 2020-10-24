@@ -73,22 +73,13 @@ def main(out, purge):
             announce = discord.utils.get(
                 guild.channels, id=int(os.environ["ANNOUNCE_CH_ID"]))
 
-            message = (await reserve.history(limit=1, oldest_first=True).flatten())[0]
-            text = re.sub(
-                r"^残HP.*\n", "", message.content.replace("**", ""), flags=re.MULTILINE)
-            group = re.findall(
-                r".\ufe0f\u20e3 (.*)\n.*: (.*)万", text, flags=re.MULTILINE)
-            for i in range(5):
-                if group[i][1] != "0":
-                    await announce.send("@everyone " + group[i][0] + "が" + group[i][1] + "万足りていません")
-                    break
-
             if now.day == date_end.day and 5 <= now.hour:
                 left_hour = 24 - now.hour
             elif 0 <= now.hour < 5:
                 left_hour = 5 - now.hour
             else:
                 left_hour = 24 + 5 - now.hour
+ 
             send_message = now.strftime('%Y/%m/%d %H時') + "の凸状況\n"
             messages = await remain.history(limit=100).flatten()
             for message in messages:
@@ -105,12 +96,28 @@ def main(out, purge):
                         left1 = condition[condition.find(
                             "# 残り1凸"):condition.find("# 残り0凸")].count("\n") - 2
                         send_message += "1凸：" + str(left1) + "人\n"
+
                         left_all = left3 * 3 + left2 * 2 + left1
+                        if left_all == 0:
+                            print("全員3凸済みの為スキップ")
+                            break
+
                         send_message += "あと" + \
                             str(left_hour) + "時間で" + str(left_all) + "凸\n"
                         send_message += "一時間あたり" + \
                             str(round(left_all / left_hour, 2)) + "凸必要です"
                         await announce.send(send_message)
+
+                        message = (await reserve.history(limit=1, oldest_first=True).flatten())[0]
+                        text = re.sub(
+                            r"^残HP.*\n", "", message.content.replace("**", ""), flags=re.MULTILINE)
+                        group = re.findall(
+                            r".\ufe0f\u20e3 (.*)\n.*: (.*)万", text, flags=re.MULTILINE)
+                        for i in range(5):
+                            if group[i][1] != "0":
+                                await announce.send("@everyone " + group[i][0] + "が" + group[i][1] + "万足りていません")
+                                break
+
                         break
 
             await client.close()
