@@ -79,8 +79,8 @@ def main(out, purge):
                 left_hour = 5 - now.hour
             else:
                 left_hour = 24 + 5 - now.hour
- 
-            send_message = now.strftime('%Y/%m/%d %H時') + "の凸状況\n"
+
+            send_message = now.strftime('%Y/%m/%d %H時') + "の残凸状況\n"
             messages = await remain.history(limit=100).flatten()
             for message in messages:
                 if message.author.name == "ハンナ":
@@ -102,11 +102,12 @@ def main(out, purge):
                             print("全員3凸済みの為スキップ")
                             break
 
-                        send_message += "あと" + \
-                            str(left_hour) + "時間で" + str(left_all) + "凸\n"
-                        send_message += "一時間あたり" + \
-                            str(round(left_all / left_hour, 2)) + "凸必要です"
-                        await announce.send(send_message)
+                        if now.hour != 5:  # 5時は全員残3凸&ハンナの更新が間に合わないので出力しない
+                            send_message += "あと" + \
+                                str(left_hour) + "時間で" + str(left_all) + "凸\n"
+                            send_message += "1時間あたり" + \
+                                str(round(left_all / left_hour, 2)) + "凸必要です"
+                            await announce.send(send_message)
 
                         message = (await reserve.history(limit=1, oldest_first=True).flatten())[0]
                         text = re.sub(
@@ -115,7 +116,8 @@ def main(out, purge):
                             r".\ufe0f\u20e3 (.*)\n.*: (.*)万", text, flags=re.MULTILINE)
                         for i in range(5):
                             if group[i][1] != "0":
-                                await announce.send("@everyone " + group[i][0] + "が" + group[i][1] + "万足りていません")
+                                await announce.send("@everyone " + group[i][0] + "が" + group[i][1] +
+                                                    "万足りていません、凸できる方はお願いします。")
                                 break
 
                         break
