@@ -7,17 +7,70 @@ from datetime import datetime
 from dateutil.tz import gettz
 import discord
 
+
+def is_hanna(user):
+    return user.name == "ハンナ" and user.bot
+
+
+def get_left_hour():
+    if now.day == date_end.day and 5 <= now.hour:
+        total = 24
+    elif 0 <= now.hour < 5:
+        total = 5
+    else:
+        total = 24 + 5
+    return total - now.hour
+
+
+def create_remain_message(messages):
+    # 日を跨いだり月を跨いだり年を跨いだりするとダメ、
+    message = discord.utils.find(lambda m: is_hanna(
+        m.author) and m.content.startswith("```md\n"), messages)
+    condition = message.content
+
+    left = re.findall(r" 残り.凸 \((\d)+名\)", condition, flags=re.MULTILINE)
+    left.reverse()
+    left_all = sum(int(x) for x in left[1:4])
+
+    left_hour = get_left_hour()
+    if left_all == 0:
+        print("全員3凸済みの為スキップ")
+        return
+
+    send_message = now.strftime('%Y/%m/%d %H時') + "の残凸状況\n" + \
+        "3凸：" + left[3] + "人\n" + \
+        "2凸：" + left[2] + "人\n" + \
+        "1凸：" + left[1] + "人\n" + \
+        "あと" + str(left_hour) + "時間で" + str(left_all) + "凸\n" + \
+        "1時間あたり" + str(round(left_all / left_hour, 2)) + "凸必要です"
+
+    return send_message
+
+
+def create_reinder_mesage(messages):
+    text = re.sub(
+        r"^残HP.*\n", "", messages[0].content.replace("**", ""), flags=re.MULTILINE)
+    group = re.findall(
+        r".\ufe0f\u20e3 (.*)\n.*: (.*)万", text, flags=re.MULTILINE)
+    for i in range(5):
+        if group[i][1] != "0":
+            send_message = "@everyone " + group[i][0] + "が" + group[i][1] + \
+                "万足りていません、凸できる方はお願いします。"
+            break
+    return send_message
+
+
 client = discord.Client()
 now = datetime.now(gettz("Asia/Tokyo"))
 
 
-@click.command()
-@click.option('--out', '-o', is_flag=True)
-@click.option('--purge', '-p', is_flag=True)
+@ click.command()
+@ click.option('--out', '-o', is_flag=True)
+@ click.option('--purge', '-p', is_flag=True)
 def main(out, purge):
     if out:
         # pylint: disable=unused-variable
-        @client.event
+        @ client.event
         async def on_ready():
             print('We have logged in as {0.user}'.format(client))
             guilds_info = {}
@@ -34,7 +87,7 @@ def main(out, purge):
                 f.write(json.dumps(guilds_info, ensure_ascii=False, indent=4))
     elif purge:
         # pylint: disable=unused-variable
-        @client.event
+        @ client.event
         async def on_ready():
             print('We have logged in as {0.user}'.format(client))
             guild = discord.utils.get(
@@ -61,7 +114,7 @@ def main(out, purge):
             return
 
         # pylint: disable=unused-variable
-        @client.event
+        @ client.event
         async def on_ready():
             print('We have logged in as {0.user}'.format(client))
             guild = discord.utils.get(
@@ -73,54 +126,22 @@ def main(out, purge):
             announce = discord.utils.get(
                 guild.channels, id=int(os.environ["ANNOUNCE_CH_ID"]))
 
-            if now.day == date_end.day and 5 <= now.hour:
-                left_hour = 24 - now.hour
-            elif 0 <= now.hour < 5:
-                left_hour = 5 - now.hour
-            else:
-                left_hour = 24 + 5 - now.hour
-
-            send_message = now.strftime('%Y/%m/%d %H時') + "の残凸状況\n"
-            messages = await remain.history(limit=100).flatten()
-            for message in messages:
-                if message.author.name == "ハンナ":
-                    condition = message.content
-                    if condition.startswith("```md"):
-                        # "残り〜凸"と空行を引く
-                        left3 = condition[condition.find(
-                            "# 残り3凸"):condition.find("# 残り2凸")].count("\n") - 2
-                        send_message += "3凸：" + str(left3) + "人\n"
-                        left2 = condition[condition.find(
-                            "# 残り2凸"):condition.find("# 残り1凸")].count("\n") - 2
-                        send_message += "2凸：" + str(left2) + "人\n"
-                        left1 = condition[condition.find(
-                            "# 残り1凸"):condition.find("# 残り0凸")].count("\n") - 2
-                        send_message += "1凸：" + str(left1) + "人\n"
-
-                        left_all = left3 * 3 + left2 * 2 + left1
-                        if left_all == 0:
-                            print("全員3凸済みの為スキップ")
-                            break
-
-                        if now.hour != 5:  # 5時は全員残3凸&ハンナの更新が間に合わないので出力しない
-                            send_message += "あと" + \
-                                str(left_hour) + "時間で" + str(left_all) + "凸\n"
-                            send_message += "1時間あたり" + \
-                                str(round(left_all / left_hour, 2)) + "凸必要です"
-                            await announce.send(send_message)
-
-                        message = (await reserve.history(limit=1, oldest_first=True).flatten())[0]
-                        text = re.sub(
-                            r"^残HP.*\n", "", message.content.replace("**", ""), flags=re.MULTILINE)
-                        group = re.findall(
-                            r".\ufe0f\u20e3 (.*)\n.*: (.*)万", text, flags=re.MULTILINE)
-                        for i in range(5):
-                            if group[i][1] != "0":
-                                await announce.send("@everyone " + group[i][0] + "が" + group[i][1] +
-                                                    "万足りていません、凸できる方はお願いします。")
-                                break
-
+            while True:
+                if now.hour == 5:  # 5時は全員残3凸&ハンナの更新が間に合わないので出力しない
+                    print("5時の為スキップ")
+                else:
+                    send_message = create_remain_message(await remain.history(limit=100).flatten())
+                    if send_message:
+                        await announce.send(send_message)
+                    else:
+                        # 全員3凸済の場合は催促不要
                         break
+
+                send_message = create_reinder_mesage(await reserve.history(limit=1, oldest_first=True).flatten())
+                if send_message:
+                    await announce.send(send_message)
+
+                break
 
             await client.close()
 
