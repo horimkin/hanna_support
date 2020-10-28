@@ -3,7 +3,7 @@ import os
 import re
 import json
 import click
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.tz import gettz
 import discord
 
@@ -22,11 +22,40 @@ def get_left_hour():
     return total - now.hour
 
 
+def is_today(str_):
+    """
+    入力例)10月28日の凸状況です
+    ハンナでは年まで表示されないので数値を取り出して比較する
+    """
+    month_day = re.findall(r"(\d+)月(\d+)日", str_)
+    month_day = [int(i) for i in month_day[0]]
+    today_m_d = [now.month, now.day]
+    yesterday = now - timedelta(days=1)
+    yesterday_m_d = [yesterday.month, yesterday.day]
+
+    if month_day == today_m_d:
+        # 5時〜23時
+        return now
+    elif month_day == yesterday_m_d and 0 <= now.hour < 5:
+        # 0時〜4時
+        return yesterday
+    else:
+        # 5時移行まだハンナが更新されていない or
+        # しばらく起動していない
+        print("ハンナ停止中")
+        return
+
+
 def create_remain_message(messages):
-    # 日を跨いだり月を跨いだり年を跨いだりするとダメ、
     message = discord.utils.find(lambda m: is_hanna(
         m.author) and m.content.startswith("```md\n"), messages)
     condition = message.content
+
+    if not condition:
+        # ガード
+        return
+    elif not is_today((condition.split())[1]):
+        return
 
     left = re.findall(r" 残り.凸 \((\d)+名\)", condition, flags=re.MULTILINE)
     left.reverse()
