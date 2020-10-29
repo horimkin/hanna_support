@@ -71,7 +71,7 @@ def create_remain_message(messages):
         "2凸：%s人\n" % left[2] + \
         "1凸：%s人\n" % left[1] + \
         "あと%d時間で%d凸\n" % (left_hour, left_all) + \
-        "1時間あたり%d凸必要です" % round(left_all / left_hour, 2)
+        "1時間あたり%0.2f凸必要です" % round(left_all / left_hour, 2)
 
     return send_message
 
