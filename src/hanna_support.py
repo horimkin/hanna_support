@@ -59,19 +59,19 @@ def create_remain_message(messages):
 
     left = re.findall(r" 残り.凸 \((\d+)+名\)", condition, flags=re.MULTILINE)
     left.reverse()
-    left_all = sum(int(x) for x in left[1:4])
-
-    left_hour = get_left_hour()
+    left_all = sum([int(x) * i for i , x in enumerate(left)][1:4])
     if left_all == 0:
         print("全員3凸済みの為スキップ")
         return
 
-    send_message = now.strftime('%Y/%m/%d %H時') + "の残凸状況\n" + \
-        "3凸：" + left[3] + "人\n" + \
-        "2凸：" + left[2] + "人\n" + \
-        "1凸：" + left[1] + "人\n" + \
-        "あと" + str(left_hour) + "時間で" + str(left_all) + "凸\n" + \
-        "1時間あたり" + str(round(left_all / left_hour, 2)) + "凸必要です"
+    left_hour = get_left_hour()
+
+    send_message = "%sの残凸状況\n" % now.strftime('%Y/%m/%d %H時') + \
+        "3凸：%s人\n" % left[3] + \
+        "2凸：%s人\n" % left[2] + \
+        "1凸：%s人\n" % left[1] + \
+        "あと%d時間で%d凸\n" % (left_hour, left_all) + \
+        "1時間あたり%d凸必要です" % round(left_all / left_hour, 2)
 
     return send_message
 
