@@ -57,7 +57,7 @@ def create_remain_message(messages):
     elif not is_today((condition.split())[1]):
         return
 
-    left = re.findall(r" 残り.凸 \((\d)+名\)", condition, flags=re.MULTILINE)
+    left = re.findall(r" 残り.凸 \((\d+)+名\)", condition, flags=re.MULTILINE)
     left.reverse()
     left_all = sum(int(x) for x in left[1:4])
 
