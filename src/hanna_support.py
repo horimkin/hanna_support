@@ -9,7 +9,7 @@ import discord
 
 
 def is_hanna(user):
-    return user.name == "ハンナ" and user.bot
+    return user.name == "ミランダ" and user.bot
 
 
 def get_left_hour():
