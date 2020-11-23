@@ -138,7 +138,7 @@ def main(out, purge):
         date_end = datetime.strptime(
             os.environ["DATE_END"] + " 23:59:59+0900", "%Y/%m/%d %H:%M:%S%z")
 
-        if now <= date_start or date_end < now:
+        if now < date_start or date_end < now:
             print("Outside the clan battle period")
             return
 
