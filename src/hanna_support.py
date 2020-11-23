@@ -76,7 +76,7 @@ def create_remain_message(messages):
     return send_message
 
 
-def create_reinder_mesage(messages):
+def create_reminder_mesage(messages):
     text = re.sub(
         r"^残HP.*\n", "", messages[0].content.replace("**", ""), flags=re.MULTILINE)
     group = re.findall(
@@ -166,7 +166,7 @@ def main(out, purge):
                         # 全員3凸済の場合は催促不要
                         break
 
-                send_message = create_reinder_mesage(await reserve.history(limit=1, oldest_first=True).flatten())
+                send_message = create_reminder_mesage(await reserve.history(limit=1, oldest_first=True).flatten())
                 if send_message:
                     await announce.send(send_message)
 
