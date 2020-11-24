@@ -9,7 +9,7 @@ import discord
 
 
 def is_hanna(user):
-    return user.id == 664501882856931348
+    return user.id == 629495625284714506
 
 
 def get_left_hour():
