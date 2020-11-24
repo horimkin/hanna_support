@@ -22,6 +22,10 @@ def get_left_hour():
     return total - now.hour
 
 
+def get_today():
+    return now.day - 1 if 0 <= now.hour < 5 else now.day
+
+
 def is_today(str_):
     """
     入力例)10月28日の凸状況です
@@ -46,20 +50,31 @@ def is_today(str_):
         return
 
 
-def create_remain_message(messages):
-    message = discord.utils.find(lambda m: is_hanna(
-        m.author) and m.content.startswith("```md\n"), messages)
-    condition = message.content
+def is_first_time():
+    return now.hour == 5 and now.day == date_start.day
 
-    if not condition:
+
+def is_finished(user):
+    mark = "# 残り0凸"
+    index = progress.find(mark)
+    if 0 < progress.find(user.name, index + len(mark)):
+        return True
+
+
+def is_over(name):
+    return re.search(r"- %s.*持ち越し.*" % name, progress, flags=re.MULTILINE)
+
+
+def create_remain_message():
+    if not progress:
         # ガード
         return
-    elif not is_today((condition.split())[1]):
+    elif not is_today((progress.split())[1]):
         return
 
-    left = re.findall(r" 残り.凸 \((\d+)+名\)", condition, flags=re.MULTILINE)
+    left = re.findall(r" 残り.凸 \((\d+)+名\)", progress, flags=re.MULTILINE)
     left.reverse()
-    left_all = sum([int(x) * i for i , x in enumerate(left)][1:4])
+    left_all = sum([int(x) * i for i, x in enumerate(left)][1:4])
     if left_all == 0:
         print("全員3凸済みの為スキップ")
         return
@@ -87,6 +102,76 @@ def create_reminder_mesage(messages):
                 "万足りていません、凸できる方はお願いします。"
             break
     return send_message
+
+
+async def initialize(route, schedule, over):
+    await route.purge(limit=100, check=init_route)
+    await schedule.purge(limit=100, check=init_schedule)
+    await over.purge(limit=100, check=init_over)
+
+
+def init_route(message):
+    if message.id == int(os.environ["ROUTE_MANUAL_ID"]):
+        return False
+
+    match = re.search(r"\d+/(\d+)", message.content, flags=re.MULTILINE)
+    if match and int(match.group(1)) >= now.day:
+        return False
+
+    return True
+
+
+def delete_route(message):
+    if message.id == int(os.environ["ROUTE_MANUAL_ID"]):
+        return False
+
+    match = re.search(r"\d+/(\d+)", message.content, flags=re.MULTILINE)
+    if match and int(match.group(1)) > get_today():
+        return False
+
+    if not is_finished(message.author):
+        return False
+
+    return True
+
+
+def init_schedule(message):
+    if message.id == int(os.environ["SCHEDULE_MANUAL_ID"]):
+        return False
+
+    match = re.search(r"\d+/(\d+)", message.content, flags=re.MULTILINE)
+    if match and int(match.group(1)) >= now.day:
+        return False
+
+    return True
+
+
+def delete_schedule(message):
+    if message.id == int(os.environ["SCHEDULE_MANUAL_ID"]):
+        return False
+
+    match = re.search(r"\d+/(\d+)", message.content, flags=re.MULTILINE)
+    if match and int(match.group(1)) > get_today():
+        return False
+
+    if not is_finished(message.author):
+        return False
+
+    return True
+
+
+def init_over(message):
+    """
+    持ち越しは5時全消去
+    """
+    return message.id != int(os.environ["OVER_MANUAL_ID"])
+
+
+def delete_over(message):
+    if message.id == int(os.environ["OVER_MANUAL_ID"]):
+        return False
+
+    return not is_over(message.author.name)
 
 
 client = discord.Client()
@@ -133,7 +218,7 @@ def main(out, purge):
     else:
         global date_start
         date_start = datetime.strptime(
-            os.environ["DATE_START"] + " 06+0900", "%Y/%m/%d %H%z")  # 初日5時は不要
+            os.environ["DATE_START"] + " 05+0900", "%Y/%m/%d %H%z")
         global date_end
         date_end = datetime.strptime(
             os.environ["DATE_END"] + " 23:59:59+0900", "%Y/%m/%d %H:%M:%S%z")
@@ -154,23 +239,44 @@ def main(out, purge):
                 guild.channels, id=int(os.environ["REMAIN_CH_ID"]))
             announce = discord.utils.get(
                 guild.channels, id=int(os.environ["ANNOUNCE_CH_ID"]))
+            route = discord.utils.get(
+                guild.channels, id=int(os.environ["ROUTE_CH_ID"]))
+            schedule = discord.utils.get(
+                guild.channels, id=int(os.environ["SCHEDULE_CH_ID"]))
+            over = discord.utils.get(
+                guild.channels, id=int(os.environ["OVER_CH_ID"]))
 
-            while True:
-                if now.hour == 5:  # 5時は全員残3凸&ハンナの更新が間に合わないので出力しない
-                    print("5時の為スキップ")
-                else:
-                    send_message = create_remain_message(await remain.history(limit=100).flatten())
-                    if send_message:
-                        await announce.send(send_message)
-                    else:
-                        # 全員3凸済の場合は催促不要
-                        break
-
+            if is_first_time():
+                print(now)
+                print("clan battle start!")
+                await initialize(route=route, schedule=schedule, over=over)
+            elif now.hour == 5:
+                print(now)
+                # 5時は全員残3凸&ハンナの更新が間に合わないので残凸の集計はしない
                 send_message = create_reminder_mesage(await reserve.history(limit=1, oldest_first=True).flatten())
                 if send_message:
                     await announce.send(send_message)
 
-                break
+                await route.purge(limit=100, check=init_route)
+                await schedule.purge(limit=100, check=init_schedule)
+                await over.purge(limit=100, check=init_over)
+            else:
+                print(now)
+                global progress
+                progress = await remain.history(limit=100).flatten()
+                progress = discord.utils.find(lambda m: is_hanna(
+                    m.author) and m.content.startswith("```md\n"), progress)
+                progress = progress.content
+                send_message = create_remain_message()
+                if send_message:
+                    await announce.send(send_message)
+                    send_message = create_reminder_mesage(await reserve.history(limit=1, oldest_first=True).flatten())
+                    if send_message:
+                        await announce.send(send_message)
+
+                await route.purge(limit=100, check=delete_route)
+                await schedule.purge(limit=100, check=delete_schedule)
+                await over.purge(limit=100, check=delete_over)
 
             await client.close()
 
