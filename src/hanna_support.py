@@ -114,7 +114,7 @@ def init_route(message):
     if message.id == int(os.environ["ROUTE_MANUAL_ID"]):
         return False
 
-    match = re.search(r"(\d+)/(\d+)", message.content, flags=re.MULTILINE)
+    match = re.search(r"^(\d+)/(\d+)", message.content)
     if match and int(match.group(1)) >= now.month and int(match.group(2)) >= now.day:
         return False
 
@@ -125,7 +125,7 @@ def delete_route(message):
     if message.id == int(os.environ["ROUTE_MANUAL_ID"]):
         return False
 
-    match = re.search(r"(\d+)/(\d+)", message.content, flags=re.MULTILINE)
+    match = re.search(r"^(\d+)/(\d+)", message.content)
     # 翌日以降の日付
     if match and int(match.group(1)) >= now.month and int(match.group(2)) > get_today():
         return False
@@ -145,7 +145,7 @@ def init_schedule(message):
     if message.id == int(os.environ["SCHEDULE_MANUAL_ID"]):
         return False
 
-    match = re.search(r"(\d+)/(\d+)", message.content, flags=re.MULTILINE)
+    match = re.search(r"^(\d+)/(\d+)", message.content)
     if match and int(match.group(1)) >= now.month and int(match.group(2)) >= now.day:
         return False
 
@@ -156,7 +156,7 @@ def delete_schedule(message):
     if message.id == int(os.environ["SCHEDULE_MANUAL_ID"]):
         return False
 
-    match = re.search(r"(\d+)/(\d+)", message.content, flags=re.MULTILINE)
+    match = re.search(r"^(\d+)/(\d+)", message.content)
     # 翌日以降の日付
     if match and int(match.group(1)) >= now.month and int(match.group(2)) > get_today():
         return False
@@ -188,7 +188,6 @@ def delete_over(message):
 
 client = discord.Client()
 now = datetime.now(gettz("Asia/Tokyo"))
-
 
 @ click.command()
 @ click.option('--out', '-o', is_flag=True)
