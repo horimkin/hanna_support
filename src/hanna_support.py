@@ -114,8 +114,8 @@ def init_route(message):
     if message.id == int(os.environ["ROUTE_MANUAL_ID"]):
         return False
 
-    match = re.search(r"\d+/(\d+)", message.content, flags=re.MULTILINE)
-    if match and int(match.group(1)) >= now.day:
+    match = re.search(r"(\d+)/(\d+)", message.content, flags=re.MULTILINE)
+    if match and int(match.group(1)) >= now.month and int(match.group(2)) >= now.day:
         return False
 
     return True
@@ -125,8 +125,8 @@ def delete_route(message):
     if message.id == int(os.environ["ROUTE_MANUAL_ID"]):
         return False
 
-    match = re.search(r"\d+/(\d+)", message.content, flags=re.MULTILINE)
-    if match and int(match.group(1)) > get_today():
+    match = re.search(r"(\d+)/(\d+)", message.content, flags=re.MULTILINE)
+    if match and int(match.group(1)) >= now.month and int(match.group(2)) >= now.day:
         return False
 
     if not is_finished(message.author):
@@ -139,8 +139,8 @@ def init_schedule(message):
     if message.id == int(os.environ["SCHEDULE_MANUAL_ID"]):
         return False
 
-    match = re.search(r"\d+/(\d+)", message.content, flags=re.MULTILINE)
-    if match and int(match.group(1)) >= now.day:
+    match = re.search(r"(\d+)/(\d+)", message.content, flags=re.MULTILINE)
+    if match and int(match.group(1)) >= now.month and int(match.group(2)) >= now.day:
         return False
 
     return True
@@ -150,8 +150,8 @@ def delete_schedule(message):
     if message.id == int(os.environ["SCHEDULE_MANUAL_ID"]):
         return False
 
-    match = re.search(r"\d+/(\d+)", message.content, flags=re.MULTILINE)
-    if match and int(match.group(1)) > get_today():
+    match = re.search(r"(\d+)/(\d+)", message.content, flags=re.MULTILINE)
+    if match and int(match.group(1)) >= now.month and int(match.group(2)) >= now.day:
         return False
 
     if not is_finished(message.author):
