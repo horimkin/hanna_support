@@ -114,8 +114,17 @@ def init_route(message):
     if message.id == int(os.environ["ROUTE_MANUAL_ID"]):
         return False
 
-    match = re.search(r"^(\d+)/(\d+)", message.content)
-    if match and int(match.group(1)) >= now.month and int(match.group(2)) >= now.day:
+    # MM/DD-DD
+    match = re.search(r"^(\d+)/(\d+).(\d+)", message.content)
+    if match:
+        day = int(match.group(3))
+    else:
+        # MM/DD
+        match = re.search(r"^(\d+)/(\d+)", message.content)
+        if match:
+            day = int(match.group(2))
+
+    if match and int(match.group(1)) >= now.month and day >= now.day:
         return False
 
     return True
@@ -125,14 +134,22 @@ def delete_route(message):
     if message.id == int(os.environ["ROUTE_MANUAL_ID"]):
         return False
 
-    match = re.search(r"^(\d+)/(\d+)", message.content)
+    # MM/DD-DD
+    match = re.search(r"^(\d+)/(\d+).(\d+)", message.content)
+    if match:
+        day = int(match.group(3))
+    else:
+        # MM/DD
+        match = re.search(r"^(\d+)/(\d+)", message.content)
+        if match:
+            day = int(match.group(2))
     # 翌日以降の日付
-    if match and int(match.group(1)) >= now.month and int(match.group(2)) > get_today():
+    if match and int(match.group(1)) >= now.month and day > get_today():
         return False
 
     if not is_finished(message.author):
         # 当日の日付
-        if match and int(match.group(1)) >= now.month and int(match.group(2)) == get_today():
+        if match and int(match.group(1)) >= now.month and day == get_today():
             return False
         # 日付なし
         elif not match:
@@ -145,8 +162,17 @@ def init_schedule(message):
     if message.id == int(os.environ["SCHEDULE_MANUAL_ID"]):
         return False
 
-    match = re.search(r"^(\d+)/(\d+)", message.content)
-    if match and int(match.group(1)) >= now.month and int(match.group(2)) >= now.day:
+    # MM/DD-DD
+    match = re.search(r"^(\d+)/(\d+).(\d+)", message.content)
+    if match:
+        day = int(match.group(3))
+    else:
+        # MM/DD
+        match = re.search(r"^(\d+)/(\d+)", message.content)
+        if match:
+            day = int(match.group(2))
+
+    if match and int(match.group(1)) >= now.month and day >= now.day:
         return False
 
     return True
@@ -156,14 +182,22 @@ def delete_schedule(message):
     if message.id == int(os.environ["SCHEDULE_MANUAL_ID"]):
         return False
 
-    match = re.search(r"^(\d+)/(\d+)", message.content)
+    # MM/DD-DD
+    match = re.search(r"^(\d+)/(\d+).(\d+)", message.content)
+    if match:
+        day = int(match.group(3))
+    else:
+        # MM/DD
+        match = re.search(r"^(\d+)/(\d+)", message.content)
+        if match:
+            day = int(match.group(2))
     # 翌日以降の日付
-    if match and int(match.group(1)) >= now.month and int(match.group(2)) > get_today():
+    if match and int(match.group(1)) >= now.month and day > get_today():
         return False
 
     if not is_finished(message.author):
         # 当日の日付
-        if match and int(match.group(1)) >= now.month and int(match.group(2)) == get_today():
+        if match and int(match.group(1)) >= now.month and day == get_today():
             return False
         # 日付なし
         elif not match:
