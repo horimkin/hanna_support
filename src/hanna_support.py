@@ -126,11 +126,17 @@ def delete_route(message):
         return False
 
     match = re.search(r"(\d+)/(\d+)", message.content, flags=re.MULTILINE)
-    if match and int(match.group(1)) >= now.month and int(match.group(2)) >= now.day:
+    # 翌日以降の日付
+    if match and int(match.group(1)) >= now.month and int(match.group(2)) > get_today():
         return False
 
     if not is_finished(message.author):
-        return False
+        # 当日の日付
+        if match and int(match.group(1)) >= now.month and int(match.group(2)) == get_today():
+            return False
+        # 日付なし
+        elif not match:
+            return False
 
     return True
 
@@ -151,11 +157,17 @@ def delete_schedule(message):
         return False
 
     match = re.search(r"(\d+)/(\d+)", message.content, flags=re.MULTILINE)
-    if match and int(match.group(1)) >= now.month and int(match.group(2)) >= now.day:
+    # 翌日以降の日付
+    if match and int(match.group(1)) >= now.month and int(match.group(2)) > get_today():
         return False
 
     if not is_finished(message.author):
-        return False
+        # 当日の日付
+        if match and int(match.group(1)) >= now.month and int(match.group(2)) == get_today():
+            return False
+        # 日付なし
+        elif not match:
+            return False
 
     return True
 
