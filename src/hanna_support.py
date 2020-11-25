@@ -57,12 +57,12 @@ def is_first_time():
 def is_finished(user):
     mark = "# 残り0凸"
     index = progress.find(mark)
-    if 0 < progress.find(user.name, index + len(mark)):
+    if 0 < progress.find("- %s\t" % user.name, index + len(mark)):
         return True
 
 
 def is_over(name):
-    return re.search(r"- %s.*持ち越し.*" % name, progress, flags=re.MULTILINE)
+    return re.search(r"^- %s\t.*持ち越し.*" % name, progress, flags=re.MULTILINE)
 
 
 def create_remain_message():
